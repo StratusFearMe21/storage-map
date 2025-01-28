@@ -20,9 +20,16 @@ impl<L: RawRwLock, M: Default> Default for StorageMap<L, M> {
     }
 }
 
-impl<L, M: fmt::Debug> fmt::Debug for StorageMap<L, M> {
+impl<L: RawRwLock, M: fmt::Debug> fmt::Debug for StorageMap<L, M> {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        self.map.get().fmt(formatter)
+        self.lock.lock_shared();
+        // try mapping for reading first
+        let map = unsafe { &*self.map.get() };
+        let result = map.fmt(formatter);
+        unsafe {
+            self.lock.unlock_shared();
+        }
+        result
     }
 }
 
